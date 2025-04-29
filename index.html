@@ -106,7 +106,6 @@
             z-index: 1;
         }
 
-        /* Rest of your existing styles... */
         .header {
             text-align: center;
             margin-bottom: 30px;
@@ -164,12 +163,154 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
-        /* Rest of your existing styles... */
-
-        /* Add this to make sure content is readable over the background */
         .instructions, .result {
             background-color: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(5px);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .video-preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .video-preview video {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .download-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .download-option {
+            display: block;
+            padding: 12px;
+            background-color: #E1306C;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .download-option:hover {
+            background-color: #C13584;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .download-option i {
+            margin-right: 8px;
+        }
+
+        .note {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+            display: none;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #E1306C;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .success-animation {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .checkmark {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: inline-block;
+            stroke-width: 2;
+            stroke: #E1306C;
+            stroke-miterlimit: 10;
+            box-shadow: 0 0 0 rgba(225, 48, 108, 0.4);
+            animation: checkmark-fill 0.4s ease-in-out 0.4s forwards, checkmark-scale 0.3s ease-in-out 0.9s both;
+        }
+
+        .checkmark__circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2;
+            stroke-miterlimit: 10;
+            stroke: #E1306C;
+            fill: none;
+            animation: checkmark-stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .checkmark__check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: checkmark-stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+
+        @keyframes checkmark-stroke {
+            100% { stroke-dashoffset: 0; }
+        }
+
+        @keyframes checkmark-scale {
+            0%, 100% { transform: none; }
+            50% { transform: scale3d(1.1, 1.1, 1); }
+        }
+
+        @keyframes checkmark-fill {
+            100% { box-shadow: inset 0 0 0 100px rgba(225, 48, 108, 0.1); }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+        }
+
+        .error-message {
+            color: #E1306C;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
         }
 
         @media (max-width: 600px) {
@@ -187,6 +328,20 @@
                 width: 200px;
                 height: 200px;
             }
+            
+            .download-options {
+                flex-direction: column;
+            }
+            
+            .download-option {
+                width: 100%;
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
         }
     </style>
 </head>
@@ -294,7 +449,7 @@
                 });
             }, 5000);
             
-            downloadBtn.addEventListener('click', function() {
+            downloadBtn.addEventListener('click', async function() {
                 const reelUrl = reelUrlInput.value.trim();
                 
                 if (!reelUrl) {
@@ -310,21 +465,102 @@
                 // Show loading spinner
                 loadingDiv.classList.add('active');
                 
-                // In a real implementation, you would send this to your backend
-                // For this example, we'll simulate a delay
-                setTimeout(() => {
+                try {
+                    // Call the Instagram Reel download API
+                    const response = await fetchInstagramReel(reelUrl);
+                    
                     // Hide loading spinner
                     loadingDiv.classList.remove('active');
                     
-                    // Show success animation
-                    showSuccessAnimation();
-                    
-                    // After animation, show result
-                    setTimeout(() => {
-                        showResult(reelUrl);
-                    }, 1500);
-                }, 2000);
+                    if (response && response.videoUrl) {
+                        // Show success animation
+                        showSuccessAnimation();
+                        
+                        // After animation, show result
+                        setTimeout(() => {
+                            showResult(response);
+                        }, 1500);
+                    } else {
+                        showError('Failed to download the reel. Please try again.');
+                    }
+                } catch (error) {
+                    loadingDiv.classList.remove('active');
+                    showError('An error occurred. Please try again.');
+                    console.error('Error:', error);
+                }
             });
+            
+            async function fetchInstagramReel(url) {
+                // In a real implementation, you would call your backend API here
+                // For this example, we'll use a free Instagram downloader API
+                
+                // Note: Many free APIs have limitations and may not work consistently
+                // In a production app, you should create your own backend service
+                
+                try {
+                    // Using a free API (this may not work long-term as free APIs often change)
+                    const apiUrl = `https://instagram-downloader-download-instagram-videos-stories.p.rapidapi.com/index?url=${encodeURIComponent(url)}`;
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'GET',
+                        headers: {
+                            'X-RapidAPI-Key': 'your-rapidapi-key', // You need to sign up for RapidAPI
+                            'X-RapidAPI-Host': 'instagram-downloader-download-instagram-videos-stories.p.rapidapi.com'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('API request failed');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Format the response for our app
+                    return {
+                        videoUrl: data.media,
+                        thumbnail: data.thumb,
+                        username: data.user.username,
+                        caption: data.caption
+                    };
+                } catch (error) {
+                    // Fallback to a simple proxy approach if API fails
+                    return await fallbackDownloadMethod(url);
+                }
+            }
+            
+            async function fallbackDownloadMethod(url) {
+                // Alternative method using a simple proxy
+                // This may work for some reels but has limitations
+                try {
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                    const response = await fetch(proxyUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error('Fallback method failed');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Extract video URL from the HTML (this is a simplified approach)
+                    const parser = new DOMParser();
+                    const htmlDoc = parser.parseFromString(data.contents, 'text/html');
+                    const videoElement = htmlDoc.querySelector('video');
+                    
+                    if (videoElement) {
+                        return {
+                            videoUrl: videoElement.src,
+                            thumbnail: videoElement.poster || '',
+                            username: 'Instagram User',
+                            caption: 'Instagram Reel'
+                        };
+                    } else {
+                        throw new Error('No video found in the response');
+                    }
+                } catch (error) {
+                    console.error('Fallback error:', error);
+                    throw error;
+                }
+            }
             
             function isValidInstagramUrl(url) {
                 // Basic validation for Instagram URLs
@@ -410,63 +646,26 @@
                 }, duration * 1000);
             }
             
-            function showResult(url) {
-                // In a real implementation, you would receive the download link from your backend
-                // For this example, we'll simulate a response
-                
+            function showResult(data) {
                 resultDiv.innerHTML = `
                     <h3>Download Ready!</h3>
-                    <p>Your Instagram Reel has been processed successfully.</p>
+                    ${data.username ? `<p>Posted by: ${data.username}</p>` : ''}
+                    ${data.caption ? `<p>${data.caption}</p>` : ''}
                     <div class="video-preview">
-                        <img src="https://via.placeholder.com/300x500?text=Video+Preview" alt="Reel preview">
+                        <video controls>
+                            <source src="${data.videoUrl}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
                     </div>
                     <div class="download-options">
-                        <a href="#" class="download-option" id="download-hd">
-                            <i class="fas fa-download"></i> Download HD Quality
-                        </a>
-                        <a href="#" class="download-option" id="download-sd">
-                            <i class="fas fa-download"></i> Download SD Quality
+                        <a href="${data.videoUrl}" class="download-option" id="download-hd" download="instagram-reel.mp4">
+                            <i class="fas fa-download"></i> Download Video
                         </a>
                     </div>
-                    <p class="note">Note: This is a frontend demo. In a real implementation, these buttons would link to actual download endpoints.</p>
+                    <p class="note">Right-click the video and select "Save video as" for alternative download method.</p>
                 `;
-                
-                // Add event listeners to the download buttons (would connect to backend in real implementation)
-                document.getElementById('download-hd').addEventListener('click', function(e) {
-                    e.preventDefault();
-                    showDownloading('HD');
-                });
-                
-                document.getElementById('download-sd').addEventListener('click', function(e) {
-                    e.preventDefault();
-                    showDownloading('SD');
-                });
-            }
-            
-            function showDownloading(quality) {
-                loadingDiv.innerHTML = `
-                    <div class="spinner"></div>
-                    <p>Downloading ${quality} version...</p>
-                `;
-                loadingDiv.classList.add('active');
-                
-                setTimeout(() => {
-                    loadingDiv.classList.remove('active');
-                    alert(`${quality} download complete! (simulated)`);
-                }, 2000);
             }
         });
-
-        // Add shake animation to CSS
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-                20%, 40%, 60%, 80% { transform: translateX(5px); }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>
