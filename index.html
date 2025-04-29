@@ -491,46 +491,46 @@
             });
             
             async function fetchInstagramReel(url) {
-                // In a real implementation, you would call your backend API here
-                // For this example, we'll use a free Instagram downloader API
+                // Using the API endpoint you provided
+                const apiUrl = `https://instagram120.p.rapidapi.com/api/instagram/hls?url=${encodeURIComponent(url)}`;
                 
-                // Note: Many free APIs have limitations and may not work consistently
-                // In a production app, you should create your own backend service
+                const options = {
+                    method: 'GET',
+                    headers: {
+                        'x-rapidapi-host': 'instagram120.p.rapidapi.com',
+                        'x-rapidapi-key': 'fd04a0a962msh9dbb80078fc5cc7p144001jsna7784327ab3d'
+                    }
+                };
                 
                 try {
-                    // Using a free API (this may not work long-term as free APIs often change)
-                    const apiUrl = `https://instagram-downloader-download-instagram-videos-stories.p.rapidapi.com/index?url=${encodeURIComponent(url)}`;
-                    
-                    const response = await fetch(apiUrl, {
-                        method: 'GET',
-                        headers: {
-                            'X-RapidAPI-Key': 'your-rapidapi-key', // You need to sign up for RapidAPI
-                            'X-RapidAPI-Host': 'instagram-downloader-download-instagram-videos-stories.p.rapidapi.com'
-                        }
-                    });
+                    const response = await fetch(apiUrl, options);
                     
                     if (!response.ok) {
-                        throw new Error('API request failed');
+                        throw new Error(`API request failed with status ${response.status}`);
                     }
                     
                     const data = await response.json();
                     
                     // Format the response for our app
-                    return {
-                        videoUrl: data.media,
-                        thumbnail: data.thumb,
-                        username: data.user.username,
-                        caption: data.caption
-                    };
+                    if (data && data.video) {
+                        return {
+                            videoUrl: data.video,
+                            thumbnail: data.thumbnail || '',
+                            username: data.username || 'Instagram User',
+                            caption: data.caption || 'Instagram Reel'
+                        };
+                    } else {
+                        throw new Error('No video found in the response');
+                    }
                 } catch (error) {
-                    // Fallback to a simple proxy approach if API fails
+                    console.error('API Error:', error);
+                    // Fallback to alternative method if primary API fails
                     return await fallbackDownloadMethod(url);
                 }
             }
             
             async function fallbackDownloadMethod(url) {
                 // Alternative method using a simple proxy
-                // This may work for some reels but has limitations
                 try {
                     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
                     const response = await fetch(proxyUrl);
